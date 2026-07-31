@@ -26,7 +26,14 @@ public sealed class SettingsService
 
             var json = File.ReadAllText(SettingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
-            return Normalize(settings);
+            settings = Normalize(settings);
+            if (!string.IsNullOrWhiteSpace(settings.TranslatorApiKeyProtected))
+            {
+                settings.TranslatorApiKey = CredentialProtector.Unprotect(
+                    settings.TranslatorApiKeyProtected);
+            }
+
+            return settings;
         }
         catch
         {
@@ -39,8 +46,14 @@ public sealed class SettingsService
         var directory = Path.GetDirectoryName(SettingsPath)!;
         Directory.CreateDirectory(directory);
 
+        var storedSettings = settings.Clone();
+        storedSettings.TranslatorApiKeyProtected =
+            string.IsNullOrWhiteSpace(settings.TranslatorApiKey)
+                ? string.Empty
+                : CredentialProtector.Protect(settings.TranslatorApiKey);
+
         var tempPath = SettingsPath + ".tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(settings, _jsonOptions));
+        File.WriteAllText(tempPath, JsonSerializer.Serialize(storedSettings, _jsonOptions));
         File.Move(tempPath, SettingsPath, true);
     }
 
@@ -67,6 +80,16 @@ public sealed class SettingsService
         }
 
         settings.JpegQuality = Math.Clamp(settings.JpegQuality, 60, 100);
+        settings.OcrLanguageTag = settings.OcrLanguageTag?.Trim() ?? string.Empty;
+        settings.TranslationTargetLanguage =
+            string.IsNullOrWhiteSpace(settings.TranslationTargetLanguage)
+                ? "zh-Hans"
+                : settings.TranslationTargetLanguage.Trim();
+        settings.TranslatorEndpoint =
+            string.IsNullOrWhiteSpace(settings.TranslatorEndpoint)
+                ? "https://api.cognitive.microsofttranslator.com"
+                : settings.TranslatorEndpoint.Trim().TrimEnd('/');
+        settings.TranslatorRegion = settings.TranslatorRegion?.Trim() ?? string.Empty;
         return settings;
     }
 }

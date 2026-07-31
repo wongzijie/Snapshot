@@ -1,4 +1,5 @@
 using System.Windows.Forms;
+using System.Text.Json.Serialization;
 
 namespace Snapshot;
 
@@ -6,6 +7,12 @@ public enum CaptureMode
 {
     Clipboard,
     SaveToFile
+}
+
+public enum CaptureAnalysisAction
+{
+    Ocr,
+    Translate
 }
 
 public sealed class HotkeyDefinition : IEquatable<HotkeyDefinition>
@@ -94,6 +101,15 @@ public sealed class AppSettings
     public HotkeyDefinition SaveHotkey { get; set; } = DefaultSaveHotkey();
     public string SaveDirectory { get; set; } = KnownFolders.GetDownloadsPath();
     public long JpegQuality { get; set; } = 92;
+    public string OcrLanguageTag { get; set; } = string.Empty;
+    public string TranslationTargetLanguage { get; set; } = "zh-Hans";
+    public string TranslatorEndpoint { get; set; } = "https://api.cognitive.microsofttranslator.com";
+    public string TranslatorRegion { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string TranslatorApiKey { get; set; } = string.Empty;
+
+    public string TranslatorApiKeyProtected { get; set; } = string.Empty;
 
     public static AppSettings CreateDefault() => new();
 
@@ -102,7 +118,13 @@ public sealed class AppSettings
         ClipboardHotkey = ClipboardHotkey.Clone(),
         SaveHotkey = SaveHotkey.Clone(),
         SaveDirectory = SaveDirectory,
-        JpegQuality = JpegQuality
+        JpegQuality = JpegQuality,
+        OcrLanguageTag = OcrLanguageTag,
+        TranslationTargetLanguage = TranslationTargetLanguage,
+        TranslatorEndpoint = TranslatorEndpoint,
+        TranslatorRegion = TranslatorRegion,
+        TranslatorApiKey = TranslatorApiKey,
+        TranslatorApiKeyProtected = TranslatorApiKeyProtected
     };
 
     public static HotkeyDefinition DefaultClipboardHotkey() => new()

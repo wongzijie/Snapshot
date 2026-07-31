@@ -7,6 +7,7 @@ namespace Snapshot;
 public partial class SettingsWindow : Window
 {
     private readonly MainController _controller;
+    private readonly OcrService _ocrService = new();
     private AppSettings _workingSettings;
     private bool _allowClose;
 
@@ -15,6 +16,7 @@ public partial class SettingsWindow : Window
         _controller = controller;
         _workingSettings = controller.CurrentSettings;
         InitializeComponent();
+        InitializeLanguageOptions();
         RenderSettings();
     }
 
@@ -40,7 +42,34 @@ public partial class SettingsWindow : Window
         SaveDirectoryBox.Text = _workingSettings.SaveDirectory;
         QualitySlider.Value = _workingSettings.JpegQuality;
         QualityValue.Text = _workingSettings.JpegQuality + "%";
+        OcrLanguageCombo.SelectedValue = _workingSettings.OcrLanguageTag;
+        if (OcrLanguageCombo.SelectedIndex < 0)
+        {
+            OcrLanguageCombo.SelectedIndex = 0;
+        }
+
+        TranslationTargetCombo.SelectedValue =
+            _workingSettings.TranslationTargetLanguage;
+        if (TranslationTargetCombo.SelectedIndex < 0)
+        {
+            TranslationTargetCombo.SelectedValue = "zh-Hans";
+        }
+
+        TranslatorKeyBox.Password = _workingSettings.TranslatorApiKey;
+        TranslatorEndpointBox.Text = _workingSettings.TranslatorEndpoint;
+        TranslatorRegionBox.Text = _workingSettings.TranslatorRegion;
         StatusText.Text = string.Empty;
+    }
+
+    private void InitializeLanguageOptions()
+    {
+        var ocrLanguages = new List<OcrLanguageOption>
+        {
+            new(string.Empty, "自动（Windows 首选语言）")
+        };
+        ocrLanguages.AddRange(_ocrService.GetAvailableLanguages());
+        OcrLanguageCombo.ItemsSource = ocrLanguages;
+        TranslationTargetCombo.ItemsSource = TranslationLanguageOptions.All;
     }
 
     private void HotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
@@ -176,6 +205,22 @@ public partial class SettingsWindow : Window
         }
 
         _workingSettings.JpegQuality = (long)Math.Round(QualitySlider.Value);
+        _workingSettings.OcrLanguageTag =
+            OcrLanguageCombo.SelectedValue?.ToString() ?? string.Empty;
+        _workingSettings.TranslationTargetLanguage =
+            TranslationTargetCombo.SelectedValue?.ToString() ?? "zh-Hans";
+        _workingSettings.TranslatorApiKey = TranslatorKeyBox.Password.Trim();
+        _workingSettings.TranslatorRegion = TranslatorRegionBox.Text.Trim();
+
+        var endpointText = TranslatorEndpointBox.Text.Trim().TrimEnd('/');
+        if (!Uri.TryCreate(endpointText, UriKind.Absolute, out var endpoint) ||
+            !string.Equals(endpoint.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            StatusText.Text = "翻译服务地址必须是有效的 HTTPS 地址。";
+            return;
+        }
+
+        _workingSettings.TranslatorEndpoint = endpointText;
         if (!_controller.TryApplySettings(_workingSettings, out var error))
         {
             StatusText.Text = error;
