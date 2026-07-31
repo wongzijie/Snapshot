@@ -12,9 +12,13 @@ public sealed class MainController : IDisposable
     private readonly System.Windows.Application _application;
     private readonly SettingsService _settingsService;
     private readonly ScreenCaptureService _screenCaptureService = new();
+    private readonly OcrService _ocrService = new();
+    private readonly TranslatorService _translatorService = new();
     private readonly GlobalHotkeyService _hotkeys = new();
     private readonly Icon _trayIcon;
     private readonly NotifyIcon _notifyIcon;
+    private readonly HashSet<TextResultWindow> _resultWindows = [];
+    private readonly HashSet<TranslationPreviewWindow> _translationWindows = [];
 
     private AppSettings _settings;
     private SettingsWindow? _settingsWindow;
@@ -165,6 +169,18 @@ public sealed class MainController : IDisposable
         _exiting = true;
         _overlay?.Close();
         _overlay = null;
+        foreach (var resultWindow in _resultWindows.ToArray())
+        {
+            resultWindow.Close();
+        }
+
+        _resultWindows.Clear();
+        foreach (var translationWindow in _translationWindows.ToArray())
+        {
+            translationWindow.Close();
+        }
+
+        _translationWindows.Clear();
         _settingsWindow?.ForceClose();
         _settingsWindow = null;
         Dispose();
@@ -208,6 +224,8 @@ public sealed class MainController : IDisposable
             var overlay = new CaptureOverlay(snapshot, mode, showInTaskbar);
             _overlay = overlay;
             overlay.CaptureCompleted += image => HandleCaptureCompleted(overlay, image, mode);
+            overlay.AnalysisRequested += (image, action) =>
+                HandleAnalysisRequested(overlay, image, action);
             overlay.FormClosed += (_, _) =>
             {
                 if (ReferenceEquals(_overlay, overlay))
@@ -224,6 +242,156 @@ public sealed class MainController : IDisposable
             AppLog.Write("Capture failed: " + exception);
             _overlay = null;
             ShowBalloon("截图失败", exception.Message, ToolTipIcon.Error, 3000);
+        }
+    }
+
+    private async void HandleAnalysisRequested(
+        CaptureOverlay overlay,
+        Bitmap image,
+        CaptureAnalysisAction action)
+    {
+        if (ReferenceEquals(_overlay, overlay))
+        {
+            _overlay = null;
+        }
+
+        using (image)
+        {
+            var translationRequested = action == CaptureAnalysisAction.Translate;
+            var resultWindow = new TextResultWindow(translationRequested);
+            _resultWindows.Add(resultWindow);
+            resultWindow.Closed += (_, _) => _resultWindows.Remove(resultWindow);
+            resultWindow.OpenSettingsRequested += ShowSettings;
+            resultWindow.Show();
+            resultWindow.Activate();
+
+            try
+            {
+                AppLog.Write(
+                    $"OCR requested. translate={translationRequested}, size={image.Width}x{image.Height}");
+                var recognition = await _ocrService.RecognizeAsync(
+                    image,
+                    _settings.OcrLanguageTag);
+                if (!resultWindow.IsLoaded)
+                {
+                    return;
+                }
+
+                resultWindow.SetRecognition(recognition);
+                if (!translationRequested || string.IsNullOrWhiteSpace(recognition.Text))
+                {
+                    return;
+                }
+
+                resultWindow.SetTranslationLoading();
+                try
+                {
+                    var translation = await _translatorService.TranslateRegionsAsync(
+                        recognition.Regions,
+                        _settings);
+                    if (!resultWindow.IsLoaded)
+                    {
+                        return;
+                    }
+
+                    if (translation.Regions.Count == 0)
+                    {
+                        throw new InvalidOperationException(
+                            "已识别到文字，但没有取得可回绘的文字区域。请稍微扩大截图范围后重试。");
+                    }
+
+                    var translatedImage = TranslationImageComposer.Compose(
+                        image,
+                        translation.Regions);
+                    ShowTranslationPreview(translatedImage, translation);
+                    resultWindow.Close();
+                }
+                catch (TranslatorConfigurationException exception)
+                {
+                    AppLog.Write("Translator is not configured: " + exception.Message);
+                    if (resultWindow.IsLoaded)
+                    {
+                        resultWindow.SetError(
+                            exception.Message,
+                            translationError: true,
+                            canOpenSettings: true);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    AppLog.Write("Translation failed: " + exception);
+                    if (resultWindow.IsLoaded)
+                    {
+                        resultWindow.SetError(
+                            exception.Message,
+                            translationError: true);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                AppLog.Write("OCR failed: " + exception);
+                if (resultWindow.IsLoaded)
+                {
+                    resultWindow.SetError(
+                        exception.Message,
+                        translationError: false);
+                }
+            }
+        }
+    }
+
+    private void ShowTranslationPreview(
+        Bitmap translatedImage,
+        RegionTranslationResult result)
+    {
+        TranslationPreviewWindow? preview = null;
+        try
+        {
+            preview = new TranslationPreviewWindow(translatedImage, result);
+            _translationWindows.Add(preview);
+            preview.Closed += (_, _) => _translationWindows.Remove(preview);
+            preview.CopyImageRequested += image =>
+            {
+                try
+                {
+                    CopyToClipboard(image);
+                    preview.SetStatus("译图已复制到剪贴板，可直接粘贴到其他应用。");
+                }
+                catch (Exception exception)
+                {
+                    preview.SetStatus("复制失败：" + exception.Message, isError: true);
+                }
+            };
+            preview.SaveImageRequested += image =>
+            {
+                try
+                {
+                    _lastSavedFile = SaveJpeg(image);
+                    preview.SetStatus($"译图已保存：{_lastSavedFile}");
+                    ShowBalloon(
+                        "译图已保存",
+                        $"{Path.GetFileName(_lastSavedFile)}\n点击通知可在文件夹中查看。",
+                        ToolTipIcon.Info,
+                        2500);
+                }
+                catch (Exception exception)
+                {
+                    preview.SetStatus("保存失败：" + exception.Message, isError: true);
+                }
+            };
+            preview.Show();
+            preview.Activate();
+        }
+        catch
+        {
+            if (preview is not null)
+            {
+                _translationWindows.Remove(preview);
+            }
+
+            translatedImage.Dispose();
+            throw;
         }
     }
 
