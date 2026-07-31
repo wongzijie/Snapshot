@@ -1,0 +1,36 @@
+name: Feature request
+description: 建议新的功能或交互改进
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用场景
+      description: 你遇到了什么问题？这个功能为什么有帮助？
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建议方案
+      description: 描述你期望的操作流程或结果。
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 功能领域
+      options:
+        - 截图选择
+        - 标注与编辑
+        - 快捷键
+        - 文件保存
+        - 系统托盘与设置
+        - 多显示器与 DPI
+        - 其他
+    validations:
+      required: true

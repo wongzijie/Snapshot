@@ -1,0 +1,24 @@
+# .NET build output
+bin/
+obj/
+dist/
+publish/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Release packages and temporary files
+*.zip
+*.tmp
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
