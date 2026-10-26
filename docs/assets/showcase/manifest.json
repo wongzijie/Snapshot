@@ -1,0 +1,30 @@
+{
+  "project": "Snapshot",
+  "source_revision": "d0524b6f02cb7e18e4b4e901bf880d2189f10d74",
+  "generated_date": "2026-10-26",
+  "status": "WINDOWS / RELEASE v1.2.2",
+  "source_files": [
+    "README.md",
+    "README_EN.md",
+    "docs/USAGE.zh-CN.md"
+  ],
+  "images": [
+    {
+      "path": "cover.png",
+      "bytes": 54350,
+      "sha256": "d2c90483d4a13d1142b4b87ad8615dd7db68941425f8fb72b80c8d4a518b2799"
+    },
+    {
+      "path": "workflow.png",
+      "bytes": 81277,
+      "sha256": "aa550d24948acd4ccb1879e92c2d040bdf98b7bb3e3bd79f3eba82a87b026442"
+    },
+    {
+      "path": "social-preview.png",
+      "bytes": 54350,
+      "sha256": "d2c90483d4a13d1142b4b87ad8615dd7db68941425f8fb72b80c8d4a518b2799"
+    }
+  ],
+  "verification_scope": "Source/README review and visual inspection; application runtime not retested",
+  "illustration_notice": "Workflow illustration, not an application screenshot"
+}

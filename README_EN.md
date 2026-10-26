@@ -1,5 +1,7 @@
 # Snapshot
 
+![Snapshot project overview](docs/assets/showcase/cover.png)
+
 Snapshot is a lightweight Windows screenshot utility that combines smart window selection, direct-to-disk capture, annotation, local OCR, and optional text translation.
 
 ## Highlights
@@ -50,3 +52,9 @@ dotnet build .\Snapshot.csproj -c Release
 The self-contained executable is written to `dist\Snapshot.exe`.
 
 For the complete documentation, see the [Chinese README](README.md) and [usage guide](docs/USAGE.zh-CN.md).
+
+## Visual guide
+
+![Source-backed workflow illustration, not a runtime screenshot](docs/assets/showcase/workflow.png)
+
+[Image gallery and evidence](docs/assets/showcase/README.md). This documentation update does not revalidate the application runtime.

@@ -1,6 +1,6 @@
-<p align="center">
-  <img src="docs/assets/hero.svg" alt="Snapshot — fast Windows screenshots" width="100%">
-</p>
+![Snapshot：Windows截图、标注、本机OCR与可选翻译](docs/assets/showcase/cover.png)
+
+
 
 <p align="center">
   <a href="https://github.com/wongzijie/Snapshot/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/wongzijie/Snapshot?style=flat-square&color=07C160"></a>
@@ -34,12 +34,20 @@
   <img src="docs/assets/workflow.svg" alt="Snapshot capture workflow" width="92%">
 </p>
 
+## 图解：截图与翻译的数据边界
+
+![图解：截图与翻译的数据边界，流程示意而非运行截图](docs/assets/showcase/workflow.png)
+
+功能流程示意，非Windows实机截图。本机OCR与主动发起的云端文字翻译是两条不同的数据路径；详细行为和限制见下文。
+
+[查看全部图片与来源](docs/assets/showcase/README.md)
+
 ## 下载
 
 前往 [GitHub Releases](https://github.com/wongzijie/Snapshot/releases/latest)，下载：
 
 ```text
-Snapshot-v1.0.0-win-x64.zip
+Snapshot-v1.2.2-win-x64.zip
 ```
 
 解压后双击 `Snapshot.exe`。发布包已包含 .NET 运行时，不需要单独安装 .NET。
@@ -141,3 +149,7 @@ Bug 和功能建议欢迎通过 [Issues](https://github.com/wongzijie/Snapshot/i
 ## 说明
 
 Snapshot 的交互灵感来自微信截图与 macOS 系统截图，但与腾讯或 Apple 无隶属、授权或合作关系。
+
+## 更多项目
+
+[A800 动量回测](https://github.com/wongzijie/stock_database) · [OpenClaw 编排经验](https://github.com/wongzijie/OpenClaw-Experience) · [Spark Memory 设计](https://github.com/wongzijie/spark-memory) · [Buffett Archive 本地检索](https://github.com/wongzijie/buffett-archive) · [相册快送](https://github.com/wongzijie/album-send)
